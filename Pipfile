@@ -4,10 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-beautifulsoup4 = "*"
-requests = "*"
-requests-html = "*"
 selenium = "*"
+win10toast = "*"
 
 [dev-packages]
 
