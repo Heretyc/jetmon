@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
+from selenium.common import exceptions as selenium_exceptions
 import pathlib
 import os
 from win10toast import ToastNotifier
@@ -32,11 +33,15 @@ if __name__ == "__main__":
         browser = webdriver.Firefox(executable_path=driver_location)
         browser.implicitly_wait(3)
 
-
-        browser.get(url)
+        try:
+            browser.get(url)
+        except selenium_exceptions.WebDriverException:
+            notifier_object.show_toast("Jetpack Status", f"Jetpack disconnected", duration=interval_sleep, icon_path=icon_location)
+            continue
         title = browser.title
         if page_title not in title:
-            notifier_object.show_toast("Jetpack Status", f"Jetpack disconnected", duration=interval_poll, icon_path=icon_location)
+            notifier_object.show_toast("Jetpack Status", f"Jetpack disconnected", duration=interval_sleep, icon_path=icon_location)
+            continue
         status_battery = browser.find_element_by_css_selector('#statusBar_battery').text
         status_rssi = browser.find_element_by_css_selector('#statusBar_rssi').get_attribute('class')
         status_tech = browser.find_element_by_css_selector('#statusBar_tech').get_attribute('class')
