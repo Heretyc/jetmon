@@ -5,11 +5,26 @@ import pathlib
 import os
 from win10toast import ToastNotifier
 import time
+import datetime
+
+def get_time_string():
+    """
+    Pulls a human readable time of day string.
+    Designed to standardize time storage and display for ease of use and consistency
+    :return: Current system time in HH:MM:SS
+    :rtype: str
+    """
+    try:
+        now = datetime.datetime.now()
+    except AttributeError:
+        now = datetime.now()
+    return now.strftime("%H:%M:%S")
 
 if __name__ == "__main__":
     print("Monitor started...")
     while True:
-
+        print("==================")
+        print(f"=\/= {get_time_string()} =\/=")
         # create an object to ToastNotifier class
         notifier_object = ToastNotifier()
 
@@ -63,6 +78,9 @@ if __name__ == "__main__":
         browser.quit()
 
         percent_rssi = int((status_rssi/5)*100)
+        print(f"""Battery:{status_battery}%
+Signal: {percent_rssi}%
+Network: {status_tech}""")
 
         if percent_rssi < 30:
             notifier_object.show_toast("Jetpack Status", f"Poor signal using {status_tech}", duration=interval_poll, icon_path=icon_location)
@@ -70,9 +88,7 @@ if __name__ == "__main__":
             notifier_object.show_toast("Jetpack Status", f"Battery at {status_battery}%!", duration=interval_poll, icon_path=icon_location)
         else:
             time.sleep(interval_sleep)
-#             notifier_object.show_toast("Jetpack Status", f"""Battery:{status_battery}%
-# Signal: {percent_rssi}%
-# Network: {status_tech}""", duration=interval_sleep, icon_path=icon_location)
+
 
 
 
