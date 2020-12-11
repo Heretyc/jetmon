@@ -6,6 +6,7 @@ import os
 from win10toast import ToastNotifier
 import time
 import datetime
+import humanize
 
 def get_time_string():
     """
@@ -20,8 +21,68 @@ def get_time_string():
         now = datetime.now()
     return now.strftime("%H:%M:%S")
 
+
+
+class Calc_Remaning_Life:
+    def __init__(self):
+        self.previous_percentages_list = []
+        self.previous_times_list = []
+
+    @staticmethod
+    def calc_elapsed_minutes(past, present):
+        """
+        get past and present values using time.time() function
+
+        ex: exec_time_minutes = calc_elapsed_minutes(__time_start, time_stop)[0]
+        Be sure to add the [0] parameter to round the result.
+
+        :param past: Any earlier time.time()
+        :type past: time.time
+        :param present: Any latter time.time()
+        :type present: time.time
+        :return: A tuple of the minutes between the two. See above notes on rounding the result.
+        :rtype: tuple
+        """
+        #
+        past = int(past)
+        present = int(present)
+        d = divmod(present - past, 86400)  # days
+        h = divmod(d[1], 3600)  # hours
+        m = divmod(h[1], 60)  # minutes
+        return m[0]
+
+    def _calc_remaining_life(self):
+        if len(self.previous_percentages_list) < 2:
+            raise ResourceWarning("Not enough data to calculate lifespan")
+        delta_percentage = self.previous_percentages_list[-1] - self.previous_percentages_list[0]
+        delta_seconds = self.previous_times_list[0] - self.previous_times_list[-1]
+
+        avg_percent_per_second = delta_percentage / delta_seconds
+        try:
+            seconds_left = self.previous_percentages_list[-1] / avg_percent_per_second
+        except ZeroDivisionError:
+            raise ResourceWarning("Not enough data to calculate lifespan")
+
+        return seconds_left
+
+
+    def checkpoint(self, current_percentage):
+        self.previous_times_list.append(time.time())
+        self.previous_percentages_list.append(current_percentage)
+
+        if len(self.previous_times_list) > 100:
+            self.previous_times_list.pop(0)
+            self.previous_percentages_list.pop(0)
+
+        try:
+            seconds_left = self._calc_remaining_life()
+            print(f"{humanize.naturaldelta(datetime.timedelta(seconds=seconds_left))} left")
+        except ResourceWarning:
+            pass
+
 if __name__ == "__main__":
     print("Monitor started...")
+    remaining_life_object = Calc_Remaning_Life()
     while True:
         print("==================")
         print(f"=\/= {get_time_string()} =\/=")
@@ -31,7 +92,7 @@ if __name__ == "__main__":
 
         url = 'http://my.jetpack/'
         page_title = 'Jetpack MiFi 8800L'
-        interval_poll = 15
+        interval_poll = 30
         interval_sleep = 120
 
         driver_location = pathlib.Path.cwd() / "geckodriver"
@@ -70,9 +131,17 @@ if __name__ == "__main__":
                 break
             except ValueError:
                 status_battery = browser.find_element_by_css_selector('#statusBar_battery').text
+        remaining_life_object.checkpoint(status_battery)
 
+        attempts_left = 10
+        while attempts_left > 0:
+            attempts_left -= 1
+            try:
+                status_rssi = int(status_rssi.replace('rssi_', ''))
+                break
+            except ValueError:
+                status_rssi = browser.find_element_by_css_selector('#statusBar_rssi').get_attribute('class')
 
-        status_rssi = int(status_rssi.replace('rssi_', ''))
         status_tech = status_tech.replace('tech_', '')
 
         browser.quit()
