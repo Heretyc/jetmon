@@ -1,1 +1,1 @@
-pipenv run python3 monitor.py
+pipenv run python monitor.py

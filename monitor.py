@@ -97,7 +97,8 @@ if __name__ == "__main__":
 
         driver_location = pathlib.Path.cwd() / "geckodriver"
         icon_location = pathlib.Path.cwd() / "blackburnDevIcon.ico"
-
+        driver_location = f"{driver_location.resolve()}"
+        icon_location = f"{icon_location.resolve()}"
         options = Options()
         # We use all methods available to ensure the browser is headless
         # Depending on OS, Firefox build and execution environment, some work, others do not
