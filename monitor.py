@@ -71,7 +71,7 @@ class Calc_Remaning_Life:
         self.previous_times_list.append(time.time())
         self.previous_percentages_list.append(current_percentage)
 
-        if len(self.previous_times_list) > 10:
+        if len(self.previous_times_list) > 100:
             self.previous_times_list.pop(0)
             self.previous_percentages_list.pop(0)
 
