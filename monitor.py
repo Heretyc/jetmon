@@ -24,7 +24,8 @@ def get_time_string():
 
 
 class Calc_Remaning_Life:
-    def __init__(self):
+    def __init__(self, resource_name):
+        self.resource_name = resource_name
         self.previous_percentages_list = []
         self.previous_times_list = []
 
@@ -52,7 +53,7 @@ class Calc_Remaning_Life:
         return m[0]
 
     def _calc_remaining_life(self):
-        if len(self.previous_percentages_list) < 2:
+        if len(self.previous_percentages_list) < 3:
             raise ResourceWarning("Not enough data to calculate lifespan")
         delta_percentage = self.previous_percentages_list[-1] - self.previous_percentages_list[0]
         delta_seconds = self.previous_times_list[0] - self.previous_times_list[-1]
@@ -70,30 +71,31 @@ class Calc_Remaning_Life:
         self.previous_times_list.append(time.time())
         self.previous_percentages_list.append(current_percentage)
 
-        if len(self.previous_times_list) > 100:
+        if len(self.previous_times_list) > 10:
             self.previous_times_list.pop(0)
             self.previous_percentages_list.pop(0)
 
         try:
             seconds_left = self._calc_remaining_life()
-            print(f"{humanize.naturaldelta(datetime.timedelta(seconds=seconds_left))} left")
+            print(f"{self.resource_name}: {humanize.naturaldelta(datetime.timedelta(seconds=seconds_left))} left")
         except ResourceWarning:
             pass
 
 if __name__ == "__main__":
+    url = 'http://my.jetpack/'
+    page_title = 'Jetpack MiFi 8800L'
+    interval_poll = 30
+    interval_sleep = 120
+    gigabytes_available = 30
+
     print("Monitor started...")
-    remaining_life_object = Calc_Remaning_Life()
+    remaining_life_object = Calc_Remaning_Life("Battery")
+    remaining_data_object = Calc_Remaning_Life("Data")
     while True:
         print("==================")
         print(f"=\/= {get_time_string()} =\/=")
         # create an object to ToastNotifier class
         notifier_object = ToastNotifier()
-
-
-        url = 'http://my.jetpack/'
-        page_title = 'Jetpack MiFi 8800L'
-        interval_poll = 30
-        interval_sleep = 120
 
         driver_location = pathlib.Path.cwd() / "geckodriver"
         icon_location = pathlib.Path.cwd() / "blackburnDevIcon.ico"
@@ -122,7 +124,11 @@ if __name__ == "__main__":
         status_battery = browser.find_element_by_css_selector('#statusBar_battery').text
         status_rssi = browser.find_element_by_css_selector('#statusBar_rssi').get_attribute('class')
         status_tech = browser.find_element_by_css_selector('#statusBar_tech').get_attribute('class')
+        status_usage = browser.find_element_by_css_selector('#usageTitle > span').text
 
+        status_usage = float(status_usage.replace(' GB used', ''))
+        percent_usage = (status_usage / gigabytes_available) * 100
+        remaining_data_object.checkpoint(percent_usage)
 
         attempts_left = 10
         while attempts_left > 0:
